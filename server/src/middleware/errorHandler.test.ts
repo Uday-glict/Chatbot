@@ -2,6 +2,7 @@ import express from 'express';
 import request from 'supertest';
 import { describe, expect, it } from 'vitest';
 import { AppError, forbidden } from '../errors';
+import { FirestoreUnavailableError } from '../firestore/client';
 import { errorHandler, notFoundHandler } from './errorHandler';
 import { requestId } from './requestId';
 
@@ -18,6 +19,9 @@ function build() {
   });
   app.get('/app-error-with-details', () => {
     throw new AppError(409, 'CONFLICT', 'duplicate', { field: 'email' });
+  });
+  app.get('/firestore-unavailable', () => {
+    throw new FirestoreUnavailableError('Firestore is unavailable');
   });
   app.use(notFoundHandler);
   app.use(errorHandler);
@@ -46,6 +50,14 @@ describe('centralized error handling', () => {
     const raw = JSON.stringify(res.body);
     expect(raw).not.toContain('secret database password');
     expect(raw).not.toContain('stack');
+  });
+
+  it('maps Firestore outages to a controlled 503 response', async () => {
+    const res = await request(app).get('/firestore-unavailable').expect(503);
+    expect(res.body.error).toMatchObject({
+      code: 'SERVICE_UNAVAILABLE',
+      message: 'Firestore is temporarily unavailable',
+    });
   });
 
   it('returns the standard envelope for unknown routes', async () => {

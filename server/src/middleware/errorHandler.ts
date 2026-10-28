@@ -1,6 +1,7 @@
 import type { ErrorRequestHandler, RequestHandler } from 'express';
 import { ZodError } from 'zod';
 import { AppError, badRequest, internal } from '../errors';
+import { isFirestoreUnavailableError } from '../firestore/client';
 import { logger } from '../logger';
 
 /** 404 for unmatched routes, in the standard error envelope. */
@@ -37,6 +38,8 @@ export const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
     });
   } else if (isBodyParserSyntaxError(err)) {
     appError = badRequest('Malformed JSON body');
+  } else if (isFirestoreUnavailableError(err)) {
+    appError = new AppError(503, 'SERVICE_UNAVAILABLE', 'Firestore is temporarily unavailable');
   } else if (isPgUniqueViolation(err)) {
     appError = new AppError(409, 'CONFLICT', 'Resource already exists');
   } else {

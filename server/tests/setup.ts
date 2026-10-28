@@ -7,7 +7,8 @@ import path from 'node:path';
  */
 process.env.NODE_ENV ??= 'test';
 process.env.JWT_SECRET ??= 'test-only-secret-key-0123456789';
-process.env.FIRESTORE_PROJECT_ID ??= 'demo-chat';
+// Tests must never target the developer's or production Firebase project.
+process.env.FIREBASE_PROJECT_ID = 'demo-chat';
 process.env.LOG_LEVEL ??= 'silent';
 
 if (!process.env.DATABASE_URL) {

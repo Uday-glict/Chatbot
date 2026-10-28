@@ -1,4 +1,4 @@
-import { FieldValue, Timestamp, type Firestore } from 'firebase-admin/firestore';
+import { FieldValue, Timestamp, type Firestore } from '@google-cloud/firestore';
 import { notFound } from '../errors';
 import { getFirestoreDb } from '../firestore/client';
 import type { ReadReceipt } from '../types/domain';

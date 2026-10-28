@@ -24,8 +24,14 @@ const envSchema = z.object({
   JWT_EXPIRES_IN: z.string().default('1h'),
   PASSWORD_SALT_ROUNDS: numberFromEnv(16384),
 
+  FIREBASE_PROJECT_ID: z.string().min(1, 'FIREBASE_PROJECT_ID is required'),
+  FIRESTORE_DATABASE_ID: z
+    .string()
+    .trim()
+    .min(1, 'FIRESTORE_DATABASE_ID must not be empty')
+    .default('default'),
+  // Optional and test-only. Production must use Cloud Firestore.
   FIRESTORE_EMULATOR_HOST: z.string().default(''),
-  FIRESTORE_PROJECT_ID: z.string().default('demo-chat'),
 
   GROUP_MAX_MEMBERS: numberFromEnv(100),
   MAX_MESSAGE_LENGTH: numberFromEnv(4000),
@@ -35,6 +41,14 @@ const envSchema = z.object({
   RATE_LIMIT_AUTH_PER_MINUTE: numberFromEnv(10),
   RATE_LIMIT_SEARCH_PER_MINUTE: numberFromEnv(30),
   RATE_LIMIT_SEND_PER_MINUTE: numberFromEnv(60),
+}).superRefine((cfg, ctx) => {
+  if (cfg.NODE_ENV === 'production' && cfg.FIRESTORE_EMULATOR_HOST) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['FIRESTORE_EMULATOR_HOST'],
+      message: 'FIRESTORE_EMULATOR_HOST must be empty in production',
+    });
+  }
 });
 
 export type Env = z.infer<typeof envSchema>;

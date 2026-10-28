@@ -2,6 +2,7 @@ import { getConfig } from './config';
 import { createPool } from './db/pool';
 import { createApp } from './app';
 import { createServices } from './container';
+import { verifyFirestoreConnectivity } from './firestore/client';
 import { logger } from './logger';
 
 async function main(): Promise<void> {
@@ -12,12 +13,34 @@ async function main(): Promise<void> {
     await pool.query('SELECT 1');
   } catch (err) {
     logger.error({ err }, 'cannot reach PostgreSQL — run migrations first (npm run migrate)');
-    process.exit(1);
+    await pool.end();
+    process.exitCode = 1;
+    return;
+  }
+
+  try {
+    await verifyFirestoreConnectivity();
+  } catch (err) {
+    logger.error(
+      { err, projectId: cfg.FIREBASE_PROJECT_ID },
+      'cannot reach Cloud Firestore — check Application Default Credentials and project configuration',
+    );
+    await pool.end();
+    process.exitCode = 1;
+    return;
   }
 
   const app = createApp(createServices(pool), cfg);
   const server = app.listen(cfg.PORT, () => {
-    logger.info({ port: cfg.PORT, env: cfg.NODE_ENV }, 'chat API listening');
+    logger.info(
+      {
+        port: cfg.PORT,
+        env: cfg.NODE_ENV,
+        firebaseProjectId: cfg.FIREBASE_PROJECT_ID,
+        firestoreEmulator: Boolean(cfg.FIRESTORE_EMULATOR_HOST),
+      },
+      'chat API listening',
+    );
   });
 
   const shutdown = (signal: string): void => {

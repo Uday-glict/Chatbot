@@ -1,4 +1,10 @@
-import { FieldPath, FieldValue, Timestamp, type DocumentSnapshot, type Firestore } from 'firebase-admin/firestore';
+import {
+  FieldPath,
+  FieldValue,
+  Timestamp,
+  type DocumentSnapshot,
+  type Firestore,
+} from '@google-cloud/firestore';
 import { badRequest, conflict, notFound } from '../errors';
 import { getFirestoreDb } from '../firestore/client';
 import type { Message } from '../types/domain';
